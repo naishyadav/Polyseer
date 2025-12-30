@@ -9,16 +9,17 @@
 ```bash
 git clone https://github.com/yorkeccak/polyseer.git
 cd polyseer
-npm install
+pnpm install
 
 # Create .env.local with:
+# NEXT_PUBLIC_APP_MODE=development
 # OPENAI_API_KEY=sk-... # Get from platform.openai.com
-# + Valyu OAuth credentials (see below)
+# VALYU_API_KEY=valyu_... # Get from platform.valyu.ai
 
-npm run dev
+pnpm dev
 ```
 
-Open [localhost:3000](http://localhost:3000), sign in with Valyu, paste any **Polymarket or Kalshi** URL, and get your analysis.
+Open [localhost:3000](http://localhost:3000), paste any **Polymarket or Kalshi** URL, and get your analysis. **No auth required in development mode!**
 
 Or, we have a hosted version [here](https://www.polyseer.xyz)
 
@@ -200,11 +201,12 @@ Each piece of evidence receives an influence score based on:
 ## Technology Stack
 
 ### Frontend
-- **Next.js 15.5** - React framework with Turbopack
+- **Next.js 16.1** - React framework with Turbopack and filesystem cache (5-14× faster cold starts)
 - **Tailwind CSS 4** - Utility-first styling
 - **Framer Motion** - Smooth animations
 - **Radix UI** - Accessible components
 - **React 19** - Latest React features
+- **pnpm** - Fast, disk space efficient package manager
 
 ### Backend & APIs
 - **AI SDK** - LLM orchestration
@@ -232,10 +234,9 @@ Each piece of evidence receives an influence score based on:
 ### Prerequisites
 
 - **Node.js 18+**
-- **npm/pnpm/yarn**
-- **OpenAI API key** - For GPT-5 access
-- **Valyu OAuth credentials** - Get from [platform.valyu.ai](https://platform.valyu.ai)
-- **Supabase account** - For database and session management
+- **pnpm** - Fast, disk space efficient package manager (install with `npm install -g pnpm`)
+- **OpenAI API key** - Get from [platform.openai.com](https://platform.openai.com)
+- **Valyu API key** - Get from [platform.valyu.ai](https://platform.valyu.ai)
 
 ### 1. Clone the Repository
 
@@ -247,56 +248,30 @@ cd polyseer
 ### 2. Install Dependencies
 
 ```bash
-npm install
-# or
 pnpm install
 ```
 
 ### 3. Environment Setup
 
-Create `.env.local` with the following variables:
+Create `.env.local` with these variables:
 
 ```env
 # ===========================================
 # App Configuration
 # ===========================================
-NEXT_PUBLIC_APP_MODE=development  # Set to 'production' for production deployment
+NEXT_PUBLIC_APP_MODE=development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # ===========================================
-# Valyu OAuth Configuration (Required)
+# Required API Keys
 # ===========================================
-# Get these from Valyu Platform Dashboard: https://platform.valyu.ai
-# Settings -> OAuth Apps -> Create new OAuth App
+OPENAI_API_KEY=your-openai-api-key  # Get from platform.openai.com
+VALYU_API_KEY=your-valyu-api-key    # Get from platform.valyu.ai
+```
 
-NEXT_PUBLIC_VALYU_SUPABASE_URL=https://xxx.supabase.co  # Valyu Platform's Supabase URL
-NEXT_PUBLIC_VALYU_CLIENT_ID=your-oauth-client-id
-VALYU_CLIENT_SECRET=your-oauth-client-secret  # Server-only! Do not expose to client
-VALYU_APP_URL=https://platform.valyu.ai  # Valyu Platform URL for userinfo endpoint
+That's it. No authentication, no OAuth setup required for local development.
 
-# ===========================================
-# App's Own Supabase (Required)
-# ===========================================
-# Your app's Supabase project for user data, chat history, etc.
-
-NEXT_PUBLIC_SUPABASE_URL=https://your-app.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Server-only!
-
-# ===========================================
-# OpenAI Configuration (Required)
-# ===========================================
-
-OPENAI_API_KEY=your-openai-api-key
-
-# ===========================================
-# Optional Services
-# ===========================================
-
-# Weaviate Memory (optional)
-MEMORY_ENABLED=false
-WEAVIATE_HOST=your-weaviate-host
-WEAVIATE_API_KEY=your-weaviate-api-key
+**Note:** The hosted version at [polyseer.xyz](https://www.polyseer.xyz) uses production mode with Valyu OAuth for user authentication and credit billing. If you're building this into a more serious project and need OAuth access, reach out to [harvey@valyu.ai](mailto:harvey@valyu.ai).
 
 # Kalshi Integration (optional)
 KALSHI_API_KEY=your-kalshi-api-key

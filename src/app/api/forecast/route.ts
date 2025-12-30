@@ -11,19 +11,23 @@ export async function POST(req: NextRequest) {
   let sessionId: string | null = null;
 
   try {
-    // Authenticate user - required for all analyses (Sign in with Valyu)
+    const isDevelopment = process.env.NEXT_PUBLIC_APP_MODE === 'development';
+
+    // Get user (optional in development mode)
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
+    // In production, authentication is required
+    if (!isDevelopment && !user) {
       return NextResponse.json(
         { error: 'Please sign in with Valyu to analyze markets' },
         { status: 401 }
       );
     }
 
-    console.log('[Forecast API] Authenticated user ID:', user.id)
-    console.log('[Forecast API] User email:', user.email)
+    console.log('[Forecast API] Mode:', isDevelopment ? 'development' : 'production');
+    console.log('[Forecast API] Authenticated user ID:', user?.id || 'anonymous (dev mode)');
+    console.log('[Forecast API] User email:', user?.email || 'none');
 
     const body = await req.json();
     const {
@@ -33,20 +37,21 @@ export async function POST(req: NextRequest) {
       historyInterval = '1d',
       withBooks = true,
       withTrades = false,
-      valyuAccessToken, // Valyu OAuth token for API calls - REQUIRED
+      valyuAccessToken, // Valyu OAuth token for API calls - optional in dev mode
     } = body;
 
-    // Valyu token is required for all analyses
-    if (!valyuAccessToken) {
+    // In development mode, Valyu token is optional (will use VALYU_API_KEY)
+    // In production mode, Valyu token is required
+    if (!isDevelopment && !valyuAccessToken) {
       return NextResponse.json(
         { error: 'Valyu connection required. Please sign in with Valyu to analyze markets.' },
         { status: 401 }
       );
     }
 
-    // Set Valyu context for tools to use
+    // Set Valyu context for tools to use (optional in dev mode)
     setValyuContext(valyuAccessToken);
-    console.log('[Forecast API] Valyu access token set for user API calls');
+    console.log('[Forecast API] Valyu access token:', valyuAccessToken ? 'present (OAuth)' : 'none (will use API key in dev mode)');
 
     // Determine which parameter was provided and validate
     let finalMarketUrl: string;
@@ -90,11 +95,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create analysis session for the authenticated user
+    // Create analysis session (only if user is authenticated)
     // Pass the full URL so platform detection works correctly
-    const session = await createAnalysisSession(user.id, finalMarketUrl);
-    sessionId = session.id;
-    // Valyu API usage is handled via OAuth proxy (charged to user's org credits)
+    if (user) {
+      const session = await createAnalysisSession(user.id, finalMarketUrl);
+      sessionId = session.id;
+    }
+    // Valyu API usage is handled via OAuth proxy in production (charged to user's org credits)
+    // In development mode, uses VALYU_API_KEY directly
 
     // Create a ReadableStream for Server-Sent Events
     const stream = new ReadableStream({
